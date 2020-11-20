@@ -31,6 +31,7 @@ import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
+import io.ballerina.runtime.api.values.BStream;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTable;
 import io.ballerina.runtime.internal.types.BArrayType;
@@ -49,6 +50,7 @@ import io.ballerina.runtime.internal.values.ErrorValue;
 import io.ballerina.runtime.internal.values.MapValue;
 import io.ballerina.runtime.internal.values.MapValueImpl;
 import io.ballerina.runtime.internal.values.RefValue;
+import io.ballerina.runtime.internal.values.StreamingJsonValue;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -551,6 +553,17 @@ public class JsonUtils {
     public static Object toJSON(BTable table) {
         TableJsonDataSource jsonDataSource = new TableJsonDataSource(table);
         return jsonDataSource.build();
+    }
+
+    /**
+     * Convert {@link BStream} to JSON.
+     *
+     * @param stream {@link BTable} to be converted
+     * @return StreamingJSON Datasource
+     */
+    public static Object toJSON(BStream stream) {
+        StreamJsonDataSource jsonDataSource = new StreamJsonDataSource(stream);
+        return new StreamingJsonValue(jsonDataSource);
     }
 
     public static BError createJsonConversionError(Throwable throwable, String prefix) {

@@ -18,7 +18,10 @@
 package io.ballerina.runtime.internal.values;
 
 import io.ballerina.runtime.api.PredefinedTypes;
+import io.ballerina.runtime.api.TypeTags;
+import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BLink;
+import io.ballerina.runtime.api.values.BObject;
 import io.ballerina.runtime.api.values.BStreamingJson;
 import io.ballerina.runtime.internal.JsonDataSource;
 import io.ballerina.runtime.internal.JsonGenerator;
@@ -56,7 +59,7 @@ public class StreamingJsonValue extends ArrayValueImpl implements BStreamingJson
         // If the the index is larger than the size, and data-source has more content,
         // then read data from data-source until the index, or until the end of the data-source.
         while (index >= size && datasource.hasNext()) {
-            appendToCache(datasource.next());
+            appendToCache(validateNextObject(datasource.next()));
         }
 
         super.add(index, value);
@@ -76,7 +79,7 @@ public class StreamingJsonValue extends ArrayValueImpl implements BStreamingJson
         // If the the index is larger than the size, and datasource has more content,
         // then read data from data-source until the index, or until the end of the data-source.
         while (index >= size && datasource.hasNext()) {
-            appendToCache(datasource.next());
+            appendToCache(validateNextObject(datasource.next()));
         }
 
         return super.getRefValue(index);
@@ -101,11 +104,11 @@ public class StreamingJsonValue extends ArrayValueImpl implements BStreamingJson
 
             // Then serialize remaining data in the data-source
             while (datasource.hasNext()) {
-                gen.serialize(datasource.next());
+                gen.serialize(validateNextObject(datasource.next()));
             }
             gen.writeEndArray();
             gen.flush();
-        } catch (IOException e) {
+        } catch (IOException|BError e) {
             throw JsonUtils.createJsonConversionError(e, "error occurred while serializing data");
         }
     }
@@ -183,7 +186,7 @@ public class StreamingJsonValue extends ArrayValueImpl implements BStreamingJson
     private void buildDatasource() {
         try {
             while (datasource.hasNext()) {
-                appendToCache(datasource.next());
+                appendToCache(validateNextObject(datasource.next()));
             }
         } catch (Throwable t) {
             throw JsonUtils.createJsonConversionError(t, "error occurred while building JSON");
@@ -217,6 +220,9 @@ public class StreamingJsonValue extends ArrayValueImpl implements BStreamingJson
             } else {
                 // Otherwise read the next value from data-source and cache it in memory
                 value = array.datasource.next();
+                if (((BObject) value).getType().getTag() == TypeTags.ERROR_TAG) {
+                    throw ((BError) value);
+                }
                 array.appendToCache(value);
             }
 
@@ -233,4 +239,13 @@ public class StreamingJsonValue extends ArrayValueImpl implements BStreamingJson
             return array.datasource.hasNext();
         }
     }
+
+    // This method is to validate that errors within are stream are not parsed
+    private Object validateNextObject(Object next) {
+        if (((BObject) next).getType().getTag() == TypeTags.ERROR_TAG) {
+            throw ((BError) next);
+        }
+        return next;
+    }
+
 }

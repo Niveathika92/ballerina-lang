@@ -24,6 +24,7 @@ import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.values.BArray;
 import io.ballerina.runtime.api.values.BError;
 import io.ballerina.runtime.api.values.BMap;
+import io.ballerina.runtime.api.values.BStream;
 import io.ballerina.runtime.api.values.BString;
 import io.ballerina.runtime.api.values.BTable;
 import io.ballerina.runtime.internal.JsonGenerator;
@@ -133,6 +134,16 @@ public class JsonUtils {
      */
     public static Object parse(BTable bTable) {
         return io.ballerina.runtime.internal.JsonUtils.toJSON(bTable);
+    }
+
+    /**
+     * Parses {@link BStream} to StreamingJSON.
+     *
+     * @param bStream {@link BTable} to be converted to JSON
+     * @return JSON representation of the provided bTable
+     */
+    public static Object parse(BStream bStream) {
+        return io.ballerina.runtime.internal.JsonUtils.toJSON(bStream);
     }
 
     /**
